@@ -1,1 +1,141 @@
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+public class TxtReader {
+
+    private static String ERROR_NOT_FOUND = "not found.";
+    private static String ERROR_INVALID_PARAM = "invalid param.";
+    private static String PROPERTIES_FILE_NAME = ".txtp";
+    private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
+
+    // 自定义伪装
+    private static String MIX_STR = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36(String)";
+
+    public static void main(String[] args) throws IOException {
+        // 入参：文件全路径
+        if(args.length == 0) return;
+        File file = new File(args[0]);
+        if(!file.exists()) return;
+
+        // 程序信息文件
+        File savedFile = new File(file.getParent() +  File.separator + PROPERTIES_FILE_NAME);
+        Properties savedInfo = read(savedFile);
+
+        // 全部文本
+        FileInputStream fi = new FileInputStream(file);
+        InputStreamReader isr = new InputStreamReader(fi, "UTF-8");
+        BufferedReader br = new BufferedReader(isr);
+        List<String> lineList = new ArrayList<>();
+        String line;
+        while ((line = br.readLine()) != null) {
+            lineList.add(line);
+        }
+        fi.close();isr.close();br.close();
+
+        // 阅读进度
+        Integer pagenum = Integer.valueOf(savedInfo.getProperty(file.getName(), "0"));
+
+        Scanner sc = new Scanner(System.in);
+        String content;
+        do{
+            content = sc.nextLine();
+            String[] params = content.split(" ");
+            try{
+                // 上一页
+                if("p".equals(content)){
+                    pagenum -= 2;
+                    if(pagenum < 0) pagenum = 0;
+                }
+                // 跳转
+                else if(content.startsWith("t ")){
+                    int index = Integer.valueOf(params[1]);
+                    pagenum = index;
+                }
+                // 搜索并跳转，可以从搜索结果中选择跳转
+                else if(content.startsWith("s ")){
+                    String searchText = params[1];
+                    int searchNum = Integer.valueOf(params[2]);
+                    int found = 0;
+                    for(int i = 0;i < lineList.size();i ++){
+                        String s = lineList.get(i).replace(" ", "").replace("\n", "");
+                        int index = s.indexOf(searchText);
+                        if(index > -1){
+                            found ++;
+                            if(searchNum == found){
+                                pagenum = i;
+                                break;
+                            }
+                        }
+                    }
+                    if(found == 0){
+                        System.out.println(ERROR_NOT_FOUND);
+                        continue;
+                    }
+                }
+                // 书签
+                else if(content.startsWith("b ") || "b".equals(content)){
+                    if(params.length > 1){
+                        String[] bookmarks = savedInfo.getProperty(file.getName() + ".bookmarks","").split(",");
+                        Integer index = Integer.valueOf(params[1]);
+                        pagenum = Integer.valueOf(bookmarks[index]);
+                    }else{
+                        String bookmark = savedInfo.getProperty(file.getName() + ".bookmarks","") + (pagenum - 1) + ",";
+                        savedInfo.setProperty(file.getName() + ".bookmarks", bookmark);
+                        write(savedInfo, savedFile);
+                        savedInfo = read(savedFile);
+                        continue;
+                    }
+                }
+                // 清屏
+                else if("cls".equals(content)){
+                    System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+                    continue;
+                }
+                // 退出并保存进度
+                else if("e".equals(content)){
+                    savedInfo.setProperty(file.getName(), pagenum + "");
+                    write(savedInfo, savedFile);
+                    System.out.println("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+                    System.exit(1);
+                }else if(!"".equals(content)){
+                    System.out.println(ERROR_INVALID_PARAM);
+                    continue;
+                }
+
+                String out = lineList.get(pagenum).trim().replace("　", "");
+                out = simpleDateFormat.format(new Date()) + " DEBUG [" + TxtReader.class.getName() + "] - " + out;
+                out = out + " " + MIX_STR;
+                System.out.println(out);
+                pagenum ++;
+            }catch (Exception e){
+                if(e instanceof NumberFormatException){
+                    System.out.println(ERROR_INVALID_PARAM);
+                }
+                else if(e instanceof IndexOutOfBoundsException){
+                    System.out.println(ERROR_NOT_FOUND);
+                }else{
+                    e.printStackTrace();
+                }
+                continue;
+            }
+        }while (content != null && pagenum < lineList.size());
+    }
+    public static void write(Properties prop, File file) throws IOException {
+        FileOutputStream fos = new FileOutputStream(file);
+        OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+        prop.store(osw, "");
+        fos.close();osw.close();
+    }
+    public static Properties read(File file) throws IOException {
+        Properties prop = new Properties();
+        if(!file.exists()) file.createNewFile();
+        FileInputStream fi = new FileInputStream(file);
+        InputStreamReader isr = new InputStreamReader(fi, "UTF-8");
+        prop.load(isr);
+        fi.close();isr.close();
+        return prop;
+    }
+}
