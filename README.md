@@ -18,3 +18,4 @@ java TxtReader /home/abc.txt
 |e|退出并保存进度|e|
 
 ### 效果![image.png](https://github.com/ghc931227/TxtReader/blob/master/%E8%BE%93%E5%87%BA%E6%95%88%E6%9E%9C.jpg)
+![image.png](https://github.com/ghc931227/SlackerReader/blob/master/%E8%BE%93%E5%87%BA%E6%95%88%E6%9E%9C_cmd.jpg)
