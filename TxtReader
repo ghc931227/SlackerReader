@@ -10,7 +10,7 @@ public class TxtReader {
     private static SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
 
     // 自定义伪装
-    private static String MIX_STR = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36(String)";
+    private static String MIX_STR = "==> Parameters: null, 1(String), 系统登录(String), 1(Integer), 2019-12-18 10:41:33.461(Timestamp), 127.0.0.1(String), Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.97 Safari/537.36(String), /a;JSESSIONID=51f65a9a007443a9a5ccb33a678fba82(String), GET(String), (String), (String)";
 
     public static void main(String[] args) throws IOException {
         // 入参：文件全路径
@@ -19,7 +19,7 @@ public class TxtReader {
         if(!file.exists()) return;
 
         // 程序信息文件
-        File savedFile = new File(file.getParent() +  File.separator + PROPERTIES_FILE_NAME);
+        File savedFile = new File(file.getAbsolutePath().replace(file.getName(), PROPERTIES_FILE_NAME));
         Properties savedInfo = read(savedFile);
 
         // 全部文本
@@ -39,8 +39,17 @@ public class TxtReader {
         Scanner sc = new Scanner(System.in);
         String content;
         do{
-            content = sc.nextLine();
+            content = sc.nextLine().trim();
             String[] params = content.split(" ");
+            List<String> paramList = Arrays.asList(params);
+            String newParam = "";
+            for(String s : paramList){
+                if(s != null && s.trim().length() > 0){
+                    newParam += s + " ";
+                }
+            }
+            content = newParam.trim();
+            params = content.split(" ");
             try{
                 // 上一页
                 if("p".equals(content)){
@@ -55,9 +64,15 @@ public class TxtReader {
                 // 搜索并跳转，可以从搜索结果中选择跳转
                 else if(content.startsWith("s ")){
                     String searchText = params[1];
-                    int searchNum = Integer.valueOf(params[2]);
+                    int startLine = 0;
+                    int searchNum = 1;
+                    if(params.length == 2){
+                        startLine = pagenum;
+                    }else{
+                        searchNum = Integer.valueOf(params[2]);
+                    }
                     int found = 0;
-                    for(int i = 0;i < lineList.size();i ++){
+                    for(int i = startLine;i < lineList.size();i ++){
                         String s = lineList.get(i).replace(" ", "").replace("\n", "");
                         int index = s.indexOf(searchText);
                         if(index > -1){
